@@ -6,7 +6,7 @@ import ora from "ora"
 import Table from "cli-table3"
 import gradient from "gradient-string"
 
-const API_KEY = "a9b740e21602ecb26b8b4082" 
+const API_KEY = "a9b740e21602ecb26b8b4082"
 const API_BASE_URL = `https://v6.exchangerate-api.com/v6/${API_KEY}/latest/`
 
 // Configuración de colores y estilos
@@ -285,26 +285,36 @@ function showAvailableCurrencies() {
 
 // Función para conversión rápida
 async function quickConversion() {
+  // Definimos los pares de monedas con sus propiedades 'from' y 'to'
   const quickPairs = [
     { name: "USD → EUR", from: "USD", to: "EUR" },
     { name: "EUR → USD", from: "EUR", to: "USD" },
     { name: "USD → MXN", from: "USD", to: "MXN" },
     { name: "EUR → GBP", from: "EUR", to: "GBP" },
     { name: "USD → JPY", from: "USD", to: "JPY" },
-    { name: "Personalizada", value: "custom" },
+    { name: "Personalizada", value: "custom" }, // Opción para ir a la conversión manual
   ]
 
   const pairAnswer = await inquirer.prompt([
     {
       type: "list",
-      name: "pair",
+      name: "selectedPairName", // Capturamos el nombre del par seleccionado
       message: colors.primary("Selecciona un par de conversión:"),
-      choices: quickPairs,
+      choices: quickPairs.map((pair) => pair.name), // Mostramos solo los nombres en las opciones
     },
   ])
 
-  if (pairAnswer.pair === "custom") {
+  // Si el usuario selecciona "Personalizada", redirigimos a la conversión manual
+  if (pairAnswer.selectedPairName === "Personalizada") {
     await performConversion()
+    return
+  }
+
+  // Encontramos el objeto del par completo basado en el nombre seleccionado
+  const selectedPair = quickPairs.find((pair) => pair.name === pairAnswer.selectedPairName)
+
+  if (!selectedPair) {
+    console.log(colors.error("❌ Error: Par de conversión no encontrado."))
     return
   }
 
@@ -312,7 +322,7 @@ async function quickConversion() {
     {
       type: "number",
       name: "amount",
-      message: colors.primary(`Cantidad en ${pairAnswer.pair.from}:`),
+      message: colors.primary(`Cantidad en ${selectedPair.from}:`), // Usamos selectedPair.from
       validate: (input) => {
         if (isNaN(input) || input <= 0) {
           return "Por favor ingresa un número válido mayor a 0"
@@ -328,13 +338,13 @@ async function quickConversion() {
   }).start()
 
   try {
-    const rate = await getExchangeRate(pairAnswer.pair.from, pairAnswer.pair.to)
+    const rate = await getExchangeRate(selectedPair.from, selectedPair.to) // Usamos selectedPair.from y selectedPair.to
     const result = amountAnswer.amount * rate
 
     spinner.succeed(colors.success("¡Listo!"))
 
     const quickResultBox = boxen(
-      colors.success(`🚀 ${amountAnswer.amount} ${pairAnswer.pair.from} = ${result.toFixed(2)} ${pairAnswer.pair.to}`),
+      colors.success(`🚀 ${amountAnswer.amount} ${selectedPair.from} = ${result.toFixed(2)} ${selectedPair.to}`),
       {
         padding: 1,
         margin: 1,
