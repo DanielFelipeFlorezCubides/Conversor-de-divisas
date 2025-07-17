@@ -9,7 +9,6 @@
     "dev": "node index.js"
   },
   "dependencies": {
-    "currency-converter-lt": "^2.0.1",
     "inquirer": "^9.2.12",
     "chalk": "^5.3.0",
     "figlet": "^1.7.0",
